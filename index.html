@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multi Bot Control System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- মোবাইল স্ক্রিনের জন্য -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 10px;
+      margin: 0;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 { 
+      text-align: center; 
+      color: #333; 
+      font-size: 20px;
+    }
+    h3 {
+      font-size: 16px;
+      margin-top: 15px;
+      color: #444;
+    }
+    input, textarea, button, select {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+    }
+    button:hover { background: #0056b3; }
+    .bot-block {
+      margin: 15px 0;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background: #f9f9f9;
+      font-size: 14px;
+    }
+    .user-list {
+      margin-top: 5px;
+    }
+    li {
+      background: #eee;
+      margin: 4px 0;
+      padding: 6px;
+      border-radius: 4px;
+      list-style-type: none;
+      font-size: 13px;
+    }
+    code {
+      word-break: break-all;
+      display: block;
+      background: #f0f0f0;
+      padding: 4px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    /* মোবাইলের জন্য ছোট স্ক্রিনে সাইজ ঠিক করা */
+    @media (max-width: 480px) {
+      h2 { font-size: 18px; }
+      h3 { font-size: 14px; }
+      input, textarea, button {
+        font-size: 13px;
+        padding: 10px;
+      }
+      .container {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🤖 Multi Bot Control Panel</h2>
+
+    <!-- Add Bot -->
+    <h3>Add Bot</h3>
+    <input type="text" id="botTokenInput" placeholder="Enter Bot Token">
+    <button onclick="addBot()">➕ Add Bot</button>
+
+    <div id="botList"></div>
+
+    <!-- Send Message -->
+    <h3>Send Message</h3>
+    <textarea id="messageText" placeholder="Enter your message"></textarea>
+    <button onclick="sendToAll()">📩 Send To All Bots & Users</button>
+
+    <p id="status"></p>
+  </div>
+
+  <script>
+    // ডাটা LocalStorage থেকে লোড
+    let bots = JSON.parse(localStorage.getItem("bots")) || [];
+
+    function saveBots() {
+      localStorage.setItem("bots", JSON.stringify(bots));
+      renderBots();
+    }
+
+    // Bot Add
+    function addBot() {
+      let token = document.getElementById("botTokenInput").value.trim();
+      if (!token) return alert("Enter Bot Token!");
+
+      bots.push({ token: token, users: [] });
+      document.getElementById("botTokenInput").value = "";
+      saveBots();
+    }
+
+    // User Add for a Bot
+    function addUser(botIndex) {
+      let userId = document.getElementById("userInput-" + botIndex).value.trim();
+      if (!userId) return alert("Enter User ID!");
+
+      if (!bots[botIndex].users.includes(userId)) {
+        bots[botIndex].users.push(userId);
+      }
+      document.getElementById("userInput-" + botIndex).value = "";
+      saveBots();
+    }
+
+    // Render Bot List
+    function renderBots() {
+      let container = document.getElementById("botList");
+      container.innerHTML = "";
+
+      bots.forEach((bot, index) => {
+        let div = document.createElement("div");
+        div.className = "bot-block";
+
+        div.innerHTML = `
+          <b>Bot ${index + 1}</b><br>
+          <small>Token:</small> 
+          <code>${bot.token}</code><br><br>
+
+<input type="text" id="userInput-${index}" placeholder="Enter User ID">
+          <button onclick="addUser(${index})">➕ Add User</button>
+          <div class="user-list"><strong>Users:</strong>
+            <ul>${bot.users.map(u => <li>${u}</li>).join("")}</ul>
+          </div>
+        ;
+        container.appendChild(div);
+      });
+    }
+
+    // Send Message To All Bots & Users
+    async function sendToAll() {
+      let message = document.getElementById("messageText").value.trim();
+      if (!message) return alert("Enter a message!");
+
+      document.getElementById("status").textContent = "⏳ Sending messages...";
+
+      for (let bot of bots) {
+        for (let userId of bot.users) {
+          let url = https://api.telegram.org/bot${bot.token}/sendMessage`;
+          let data = { chat_id: userId, text: message };
+
+          try {
+            let response = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data)
+            });
+
+            let result = await response.json();
+            console.log(result);
+          } catch (err) {
+            console.error("Error sending to", userId, err);
+          }
+        }
+      }
+
+      document.getElementById("status").textContent = "✅ Message sent to all saved bots & users!";
+    }
+
+    renderBots();
+  </script>
+</body>
+</html>
